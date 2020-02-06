@@ -1,0 +1,8 @@
+.idea
+.env
+.DS_Store
+.vscode
+__pycache__/
+books/*
+images/*
+books_description.json
