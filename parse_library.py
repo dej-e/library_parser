@@ -67,30 +67,31 @@ def get_book_raw_catalog(url, page_id):
 
 def get_book_properties(url, book_path):
     book_url = urljoin(url, book_path)
+
     response = requests.get(url=book_url, allow_redirects=False)
     response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'lxml')
 
+    soup = BeautifulSoup(response.text, 'lxml')
     title, author = soup.select_one('td.ow_px_td h1').text.split('::')
     title = title.strip()
     author = author.strip()
 
-    text_download_url = urljoin(url, f'/txt.php?id={book_path[2:]}')
-    book_path = download_txt(text_download_url, title)
-    if book_path is None:
+    text_download_url = urljoin(book_url, f'/txt.php?id={book_path[2:]}')
+    book_content_path = download_txt(text_download_url, title)
+    if book_content_path is None:
         return None
 
-    book_img_path = soup.select_one('div.bookimage img')['src']
-    book_img_url = urljoin(book_url, book_img_path)
+    book_cover_path = soup.select_one('div.bookimage img')['src']
+    book_cover_url = urljoin(book_url, book_cover_path)
 
-    image_filename = book_img_path.split('/')[-1]
-    image_path = download_image(book_img_url, image_filename)
+    image_filename = book_cover_path.split('/')[-1]
+    image_path = download_image(book_cover_url, image_filename)
 
     return {
         'title': title,
         'author': author,
         'img_src': image_path,
-        'book_path': book_path,
+        'book_path': book_content_path,
         'comments': get_book_comments(soup),
         'genres': get_book_genres(soup),
     }
