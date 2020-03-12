@@ -7,8 +7,6 @@ import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
-SITE_URL = 'http://tululu.org/'
-
 
 def download_txt(url, filename, folder='books/'):
     os.makedirs(folder, exist_ok=True)
@@ -41,9 +39,10 @@ def get_last_page(url):
 
     soup = BeautifulSoup(response.text, 'lxml')
     pages = soup.select('p.center a')
-    last_page = pages[-1]['href']
-    if last_page.split('/')[-2].isdigit():
-        return int(last_page.split('/')[-2])
+    last_page_path = pages[-1]['href']
+    last_page = last_page_path.split('/')[-2]
+    if last_page.isdigit():
+        return int(last_page)
     return None
 
 
@@ -66,8 +65,8 @@ def get_book_raw_catalog(url, page_id):
     return book_catalog
 
 
-def get_book_properties(book_url):
-    book_abs_url = urljoin(SITE_URL, book_url)
+def get_book_properties(url, book_path):
+    book_abs_url = urljoin(url, book_path)
     response = requests.get(url=book_abs_url, allow_redirects=False)
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
@@ -76,13 +75,13 @@ def get_book_properties(book_url):
     title = title.strip()
     author = author.strip()
 
-    text_download_url = f'{SITE_URL}/txt.php?id={book_url[2:]}'
+    text_download_url = urljoin(url, f'/txt.php?id={book_path[2:]}')
     book_path = download_txt(text_download_url, title)
     if book_path is None:
         return None
 
     book_img_link = soup.select_one('div.bookimage img')['src']
-    book_img_url = urljoin(SITE_URL, book_img_link)
+    book_img_url = urljoin(url, book_img_link)
 
     image_filename = book_img_link.split('/')[-1]
     image_path = download_image(book_img_url, image_filename)
@@ -119,14 +118,15 @@ def main():
 
     books_descriptions = []
     for page in range(start_page, end_page):
+
         book_catalog = get_book_raw_catalog(url, page)
         if not book_catalog:
             break
         for book in book_catalog:
-            book_url = book['href']
-            books_description = get_book_properties(book_url)
+            book_path = book['href']
+            books_description = get_book_properties(url, book_path)
             if books_description is None:
-                print(f'URL {urljoin(SITE_URL, book_url)} not available. Skipping.')
+                print(f'URL {urljoin(url, book_path)} not available. Skipping.')
                 continue
             books_descriptions.append(books_description)
 
