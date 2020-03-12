@@ -66,8 +66,8 @@ def get_book_raw_catalog(url, page_id):
 
 
 def get_book_properties(url, book_path):
-    book_abs_url = urljoin(url, book_path)
-    response = requests.get(url=book_abs_url, allow_redirects=False)
+    book_url = urljoin(url, book_path)
+    response = requests.get(url=book_url, allow_redirects=False)
     response.raise_for_status()
     soup = BeautifulSoup(response.text, 'lxml')
 
@@ -80,10 +80,10 @@ def get_book_properties(url, book_path):
     if book_path is None:
         return None
 
-    book_img_link = soup.select_one('div.bookimage img')['src']
-    book_img_url = urljoin(url, book_img_link)
+    book_img_path = soup.select_one('div.bookimage img')['src']
+    book_img_url = urljoin(book_url, book_img_path)
 
-    image_filename = book_img_link.split('/')[-1]
+    image_filename = book_img_path.split('/')[-1]
     image_path = download_image(book_img_url, image_filename)
 
     return {
